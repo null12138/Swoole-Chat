@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>WebSocket聊天 v1.0</title>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
+	<link rel="stylesheet" type="text/css" href="static/css/reset.css">
+	<link rel="stylesheet" type="text/css" href="static/emoji/emoji.css">
+</head>
+<style type="text/css">
+.body{display: flex; align-items: center; justify-content: center; height: 100%;}
+.chat-wrap{height: 600px; width: 750px; border: 1px solid #d9d9d9; box-shadow: 1px 1px 50px rgba(0,0,0,.3); overflow: hidden; border-radius: 3px;}
+.chat-member{float: left; width: 25%; background-color: #ececec; height: 100%; box-sizing: border-box; padding: 5px 5px;}
+.chat-body{float: left; height: 100%; width: 75%;}
+.chat-self{white-space: nowrap; margin: 5px 0; padding: 5px; height: 50px; box-sizing: border-box; text-align: left; line-height: 40px; cursor: default; border-radius: 3px;}
+.chat-self img{height: 40px; width: 40px;}
+.chat-self span{height: 40px; display: inline-block; vertical-align: top; padding-left: 10px;}
+.chat-online{text-align: center; height: 40px; line-height: 40px; border-radius: 3px; background-color: #fcfcfc;}
+.chat-member-list{height: calc(100% - 90px); overflow-y: auto;}
+.chat-member-list li{white-space: nowrap; margin: 5px 0; padding: 5px; height: 50px; box-sizing: border-box; text-align: left; line-height: 40px; cursor: default; border-radius: 3px;}
+.chat-member-list li img{width: 40px; height: 40px; vertical-align: top;}
+.chat-member-list li span{height: 40px; display: inline-block; vertical-align: top; padding-left: 10px;}
+.chat-member-list li:hover{background-color: #fcfcfc;}
+.chat-title{background-color: #f8f8f8; text-align: center; font-size: 16px; font-weight: bold; height: 40px; line-height: 40px;}
+.chat-main{height: 380px; overflow: auto; padding: 0 15px 15px 15px; box-sizing: border-box; overflow: auto;}
+.chat-mine,.chat-other{overflow: hidden; margin-top: 10px;}
+.chat-content{position: relative; line-height: 22px; padding: 6px 14px; border-radius: 3px; word-break: break-all; display: inline-block; margin-top: 5px; text-align: left;}
+.chat-content img{vertical-align: middle;}
+.chat-mine .chat-user{float: right;}
+.chat-mine .chat-user img{width: 40px; height: 40px;}
+.chat-other .chat-user{float: left;}
+.chat-other .chat-user img{width: 40px; height: 40px;}
+.chat-mine .chat-text{float: right; width: calc(100% - 40px); text-align: right; padding-right: 10px; box-sizing: border-box; position: relative;}
+.chat-mine .chat-text:after{border-top-color: #5fb878; content: ''; position: absolute; width: 0; height: 0; border-style: solid dashed dashed; border-color: #5fb878 transparent transparent; overflow: hidden; border-width: 10px; right: 0; top: 30px;}
+.chat-other .chat-text{float: left; width: calc(100% - 40px); text-align: left; padding-left: 10px; box-sizing: border-box; position: relative;}
+.chat-other .chat-text:after{border-top-color: #e2e2e2; content: ''; position: absolute; width: 0; height: 0; border-style: solid dashed dashed; border-color: #e2e2e2 transparent transparent; overflow: hidden; border-width: 10px; left: 0; top: 30px;}
+.chat-mine .chat-text .chat-info,.chat-other .chat-text .chat-info{color: #999; font-size: 12px; white-space: nowrap;}
+.chat-mine .chat-text .chat-content{background-color: #5fb878; color: #fff;}
+.chat-other .chat-text .chat-content{background-color: #e2e2e2; color: #333;}
+.chat-footer{border-top: 1px solid #f1f1f1; box-sizing: border-box;}
+.chat-tool{padding: 0 8px; height: 38px; line-height: 38px; position: relative;}
+.chat-tool img{width: 28px; height: 28px; vertical-align: middle; padding: 2px; box-sizing: border-box;}
+.chat-tool img:hover{background-color: #eee;}
+.chat-textarea{margin-left: 10px;}
+.chat-textarea textarea{border: none; resize: none; overflow: auto; width: 100%; height: 96px; display: block; outline: 0; font-size: 14px; font-family: '微软雅黑';}
+.chat-bottom{height: 46px; position: relative;}
+.chat-btn-send{width: 75px; height: 32px; position: absolute; right: 15px; top: 5px; background-color: #5fb878; color: #fff; font-size: 15px; text-align: center; line-height: 32px; cursor: pointer; border-radius: 3px;}
+</style>
+<body class="body">
+<div class="chat-wrap">
+	<div class="chat-member">
+		<div class="chat-self"></div>
+		<div class="chat-online">在线用户（<span>0</span>）</div>
+		<ul class="chat-member-list"></ul>
+	</div>
+	<div class="chat-body">
+		<div class="chat-title">WebSocket聊天 v1.0</div>
+		<ul class="chat-main"></ul>
+		<div class="chat-footer">
+			<div class="chat-tool"><img class="emotion" src="static/img/emoji.png"></div>
+			<div class="chat-textarea">
+				<textarea id="textarea" name="textarea"></textarea>
+			</div>
+			<div class="chat-bottom">
+				<div class="chat-btn-send" onclick="action.send();">发送</div>
+			</div>
+		</div>
+	</div>
+</div>
+<script src="//cdn.bootcss.com/jquery/2.2.4/jquery.min.js"></script>
+<script type="text/javascript" src="static/emoji/jquery.qqFace.js"></script>
+<script type="text/javascript" src="static/layui/layui.js"></script>
+<script type="text/javascript">
+var name = null;
+var ws = null;
+layui.use(['layer'], function(){
+	var layer = layui.layer;
+	layer.ready(function() {
+		layer.prompt({
+			value: '佚名',
+			title: '请输入昵称',
+			closeBtn: false,
+			btn: ['进入']
+		}, function(value, index, elem){
+			layer.close(index);
+			name = value;
+			var wsUrl = 'ws://192.168.80.129:9508';
+			ws = new WebSocket(wsUrl);
+			ws.onopen = function(e) {
+				var data = {};
+				data.name = value;
+				data.type = 2;
+				ws.send(JSON.stringify(data));
+				var content = '<img src="static/img/default_head.png"><span>'+ value +'</span>';
+				$('.chat-self').html(content);
+			}
+			ws.onmessage = function(e) {
+				var data = JSON.parse(e.data);
+				switch (data.type) {
+					case 0:
+						//统计在线用户数量
+						$('.chat-online span').text(data.total);
+						break;
+					case 1:
+						//给每个用户发送新用户连接提醒
+						var cname = 'list-' + data.fd;
+						$('.chat-member-list').append('<li class="'+ cname +'"><img src="static/img/default_head.png"><span>'+ data.name +'</span></li>');
+						layer.msg(data.name + '加入了群聊',{
+							offset: 't'
+						})
+						break;
+					case 2:
+						//获取新连接用户的聊天列表数据
+						var content = '';
+						$.each(JSON.parse(data.list), function(index, val) {
+							var cname = 'list-' + data.fd;
+							content += '<li class="'+ cname +'"><img src="static/img/default_head.png"><span>'+ val.name +'</span></li>';
+						})
+						$('.chat-member-list').append(content);
+						break;
+					case 3:
+						//有用户退出连接
+						$('.list-' + data.fd).remove();
+						layer.msg(data.name + '退出了群聊',{
+							offset: 't'
+						})
+						break;
+					case 4:
+						//处理接收到的用户消息
+						var cname = 'chat-other chat-list-' + data.fd;
+						var content = '<li class="'+ cname +'"><div class="chat-user"><img src="static/img/default_head.png"></div><div class="chat-text"><div class="chat-info">'+ data.name +'</div><div class="chat-content">'+ action.replace_em(text) +'</div></div></li>';
+						$('.chat-main').append(content);
+
+				}
+			}
+			ws.onclose = function(e) {
+				console.log('连接关闭');
+			}
+		});
+	})
+});
+var action = {
+	//发送消息
+	send: function() {
+		var text = $('#textarea').val();
+		if ($.trim(text) == '') {
+			layer.msg('请输入消息');
+			return false;
+		}
+		var data = {};
+		data.type = 4;
+		data.name = name;
+		data.text = text;
+		ws.send(JSON.stringify(data));
+		$('#textarea').val('');
+		var content = '<li class="chat-mine"><div class="chat-user"><img src="static/img/default_head.png"></div><div class="chat-text"><div class="chat-info">'+ name +'</div><div class="chat-content">'+ action.replace_em(text) +'</div></div></li>';
+		$('.chat-main').append(content);
+	},
+	//表情转换
+	replace_em: function(str) {
+		str = str.replace(/\</g,'&lt;');
+		str = str.replace(/\>/g,'&gt;');
+		str = str.replace(/\n/g,'<br/>');
+		str = str.replace(/\[em_([0-9]*)\]/g,'<img src="static/emoji/arclist/$1.gif" border="0" />');
+		return str;
+	}
+}
+$(document).keydown(function(event){
+	if (event.keyCode == 13) {
+		$('.layui-layer-btn0').trigger('click');
+	}
+	if (event.altKey && event.keyCode == 83) {
+		action.send();
+	}
+});
+$('.chat-btn-send').hover(function() {
+	layer.tips('按 Alt + s 快捷发送', '.chat-btn-send',{
+		time: 0
+	});
+}, function() {
+	layer.closeAll('tips');
+});
+
+//表情操作
+$(function(){
+	//msie报错问题
+	jQuery.browser={};(function(){jQuery.browser.msie=false; jQuery.browser.version=0;if(navigator.userAgent.match(/MSIE ([0-9]+)./)){ jQuery.browser.msie=true;jQuery.browser.version=RegExp.$1;}})();
+	//表情初始化
+	$('.emotion').qqFace({
+		id : 'facebox', 
+		assign: 'textarea', 
+		path: 'static/emoji/arclist/'	//表情存放的路径
+	});
+});
+</script>
+</body>
+</html>
