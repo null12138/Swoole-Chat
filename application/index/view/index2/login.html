@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>在线聊天室</title>
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
+	<link rel="stylesheet" type="text/css" href="static/css/reset.css">
+	<link rel="stylesheet" type="text/css" href="static/layui/css/layui.css">
+</head>
+<body class="body">
+</body>
+<script src="//cdn.bootcss.com/jquery/2.2.4/jquery.min.js"></script>
+<script type="text/javascript" src="static/layui/layui.js"></script>
+<script type="text/javascript">
+layui.use(['layer'], function(){
+	var layer = layui.layer;
+	layer.ready(function(){
+		layer.open({
+			type: 1,
+			title: '进入聊天室',
+			closeBtn: 0,
+			move: false,
+			resize: false,
+			shade: '#fff',
+			content: '<form class="layui-form login-from" style="margin: 15px 20px 0 0;"><div class="layui-form-item"><label class="layui-form-label">昵　　称</label><div class="layui-input-block"><input type="text" name="name" required lay-verify="required" placeholder="请输入昵称" autocomplete="off" class="layui-input"></div></div><div class="layui-form-item"><label class="layui-form-label">密　　码</label><div class="layui-input-block"><input type="password" name="pwd" required lay-verify="required" placeholder="请输入密码" autocomplete="off" class="layui-input"></div></div><div class="layui-form-item"><div class="layui-input-block"><div class="layui-btn layui-btn-normal" onclick="action.login();">确定</div><div class="layui-btn layui-btn-primary" onclick="action.close();">关闭</div></div></div></form>'
+		})
+	});
+});
+var action = {
+	login: function() {
+		var loading = layer.load(2);
+		$.ajax({
+			url: 'login',
+			type: 'POST',
+			data: $('.login-from').serializeArray(),
+			success: function(response) {
+				if (response.code == 0) {
+					window.location = '/';
+				} else {
+					layer.msg(response.msg);
+					$('input[name="pwd"]').select();
+				}
+				layer.close(loading);
+			}
+		})
+	},
+	close: function() {
+		layer.confirm('确认关闭？', function(index){
+			window.opener = null;
+			window.open('','_self');
+			window.close();
+		});
+	}
+}
+</script>
+</html>
