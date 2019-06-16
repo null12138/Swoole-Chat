@@ -84,7 +84,7 @@ layui.use(['layer'], function(){
 		}, function(value, index, elem){
 			layer.close(index);
 			name = value;
-			var wsUrl = 'ws://192.168.80.129:9508';
+			var wsUrl = '{$ws_host}';
 			ws = new WebSocket(wsUrl);
 			ws.onopen = function(e) {
 				var data = {};
