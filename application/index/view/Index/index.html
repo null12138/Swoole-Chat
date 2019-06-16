@@ -113,7 +113,7 @@ layui.use(['layer'], function(){
 						//获取新连接用户的聊天列表数据
 						var content = '';
 						$.each(JSON.parse(data.list), function(index, val) {
-							var cname = 'list-' + data.fd;
+							var cname = 'list-' + val.fd;
 							content += '<li class="'+ cname +'"><img src="static/img/default_head.png"><span>'+ val.name +'</span></li>';
 						})
 						$('.chat-member-list').append(content);
