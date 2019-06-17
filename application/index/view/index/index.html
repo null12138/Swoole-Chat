@@ -14,12 +14,12 @@
 .chat-body{float: left; height: 100%; width: 75%;}
 .chat-self{white-space: nowrap; margin: 5px 0; padding: 5px; height: 50px; box-sizing: border-box; text-align: left; line-height: 40px; cursor: default; border-radius: 3px;}
 .chat-self img{height: 40px; width: 40px;}
-.chat-self span{height: 40px; display: inline-block; vertical-align: top; padding-left: 10px;}
+.chat-self span{height: 40px; display: inline-block; vertical-align: top; padding-left: 10px; width: calc(100% - 50px); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;}
 .chat-online{text-align: center; height: 40px; line-height: 40px; border-radius: 3px; background-color: #fcfcfc;}
 .chat-member-list{height: calc(100% - 90px); overflow-y: auto;}
 .chat-member-list li{white-space: nowrap; margin: 5px 0; padding: 5px; height: 50px; box-sizing: border-box; text-align: left; line-height: 40px; cursor: default; border-radius: 3px;}
 .chat-member-list li img{width: 40px; height: 40px; vertical-align: top;}
-.chat-member-list li span{height: 40px; display: inline-block; vertical-align: top; padding-left: 10px;}
+.chat-member-list li span{height: 40px; display: inline-block; vertical-align: top; padding-left: 10px; width: calc(100% - 50px); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;}
 .chat-member-list li:hover{background-color: #fcfcfc;}
 .chat-title{background-color: #f8f8f8; text-align: center; font-size: 16px; font-weight: bold; height: 40px; line-height: 40px;}
 .chat-main{height: 380px; overflow: auto; padding: 0 15px 15px 15px; box-sizing: border-box; overflow: auto;}
@@ -137,6 +137,23 @@ layui.use(['layer'], function(){
 				console.log('连接关闭');
 			}
 		});
+		$('.layui-layer-input').on('input propertychange', function() {
+			var text = $('.layui-layer-input').val();
+			var textlen = $('.layui-layer-input').val().length;
+			if (textlen > 20) {
+				var lenText = text.substring(0,20);
+				$('.layui-layer-input').val(lenText);
+				layer.msg('长度不能超过20');
+			}
+		});
+		//回车进入聊天室
+		$('.layui-layer-input').select();
+		$('.layui-layer-input').keydown(function(event) {
+			if (event.keyCode == 13) {
+				event.preventDefault();
+				$('.layui-layer-btn0').trigger('click');
+			}
+		});
 	})
 });
 var action = {
@@ -166,21 +183,22 @@ var action = {
 		return str;
 	}
 }
-$(document).keydown(function(event){
-	if (event.keyCode == 13) {
-		$('.layui-layer-btn0').trigger('click');
-	}
-	if (event.altKey && event.keyCode == 83) {
+//回车发送，Ctrl+回车换行
+$('#textarea').keydown(function(event){
+	if (event.ctrlKey && event.keyCode == 13) {
+		$(this).val($(this).val() + '\n');
+	} else if (event.keyCode == 13) {
+		event.preventDefault();
 		action.send();
 	}
 });
-$('.chat-btn-send').hover(function() {
-	layer.tips('按 Alt + s 快捷发送', '.chat-btn-send',{
-		time: 0
-	});
-}, function() {
-	layer.closeAll('tips');
-});
+// $('.chat-btn-send').hover(function() {
+// 	layer.tips('按 Ctrl + Enter 换行', '.chat-btn-send',{
+// 		time: 0
+// 	});
+// }, function() {
+// 	layer.closeAll('tips');
+// });
 
 //表情操作
 $(function(){
