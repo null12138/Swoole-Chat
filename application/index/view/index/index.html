@@ -130,7 +130,7 @@ layui.use(['layer'], function(){
 						var cname = 'chat-other chat-list-' + data.fd;
 						var content = '<li class="'+ cname +'"><div class="chat-user"><img src="static/img/default_head.png"></div><div class="chat-text"><div class="chat-info">'+ data.name +'</div><div class="chat-content">'+ action.replace_em(data.text) +'</div></div></li>';
 						$('.chat-main').append(content);
-
+						$('.chat-main').scrollTop($('.chat-main')[0].scrollHeight);
 				}
 			}
 			ws.onclose = function(e) {
@@ -154,8 +154,8 @@ var action = {
 		ws.send(JSON.stringify(data));
 		$('#textarea').val('');
 		var content = '<li class="chat-mine"><div class="chat-user"><img src="static/img/default_head.png"></div><div class="chat-text"><div class="chat-info">'+ name +'</div><div class="chat-content">'+ action.replace_em(text) +'</div></div></li>';
-		console.log(content);
 		$('.chat-main').append(content);
+		$('.chat-main').scrollTop($('.chat-main')[0].scrollHeight);
 	},
 	//表情转换
 	replace_em: function(str) {
