@@ -1,5 +1,5 @@
 <?php
-namespace app\http;
+namespace app\server;
 use think\swoole\Server;
 use think\Db;
 class Swoole extends Server

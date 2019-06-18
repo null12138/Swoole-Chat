@@ -16,12 +16,8 @@
 //Route::get('hello/:name', 'index/hello');
 
 
-Route::get('/chat2', 'index/Index/index');
+Route::get('/phpinfo', 'index/Index/phpinfo');
 Route::get('/', 'index/Index/index');
-Route::get('/login', 'index/Index/login');
-Route::get('/logout', 'index/Index/logout');
-
-Route::post('/login', 'index/Index/login');
 return [
 	
 ];
