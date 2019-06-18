@@ -1,7 +1,9 @@
 <?php
 namespace app\server;
+
 use think\swoole\Server;
 use think\Db;
+use org\Redis;
 class Swoole extends Server
 {
 	protected $host = '0.0.0.0';
@@ -41,15 +43,20 @@ class Swoole extends Server
 					}
 				}
 				//查询出所有用户
-				$users = Db::name('temp')->order('id','desc')->field('fd,name')->select();
+				//$users = Db::name('temp')->order('id','desc')->field('fd,name')->select();
+				$users = Redis::getInstance()->hGetAll('chat-member');
 				if ($users) {
 					//获取新连接用户的列表数据
+					foreach ($users as $key => $value) {
+						$users[$key] = json_decode($value,true);
+					}
 					$res['type'] = 2;
 					$res['list'] = json_encode($users);
 					$server->push($frame->fd,json_encode($res));
 				}
 				//将新用户数据保存
-				Db::name('temp')->insert(['fd' => $frame->fd,'name' => $data['name']]);
+				Redis::getInstance()->hSet('chat-member',$frame->fd,json_encode(['fd' => $frame->fd,'name' => $data['name']]));
+				//Db::name('temp')->insert(['fd' => $frame->fd,'name' => $data['name']]);
 				break;
 			case 3:
 				# code...
@@ -66,10 +73,11 @@ class Swoole extends Server
 	}
 
 	public function onClose($server,$fd) {
-		$name = Db::name('temp')->where('fd = '.$fd)->value('name');
+		$user = json_decode(Redis::getInstance()->hGet('chat-member',$fd),true);
+		//$name = Db::name('temp')->where('fd = '.$fd)->value('name');
 		$data = array(
 			'type'	=> 3,
-			'name'	=> $name,
+			'name'	=> $user['name'],
 			'fd'	=> $fd
 		);
 		$i = 0;
@@ -81,7 +89,8 @@ class Swoole extends Server
 			}
 		}
 		//删除用户
-		Db::name('temp')->where('fd = '.$fd)->delete();
+		Redis::getInstance()->hdel('chat-member',$fd);
+		//Db::name('temp')->where('fd = '.$fd)->delete();
 		$data['type'] = 0;
 		$data['total'] = $i;
 		unset($data['fd']);

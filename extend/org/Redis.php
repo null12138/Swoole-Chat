@@ -1,105 +1,30 @@
 <?php
+namespace org;
+
 class Redis {
     private $redis;
-     
-    //当前数据库ID号
-    protected $dbId=0;
-     
-    //当前权限认证码
-    protected $auth;
-     
-    /**
-     * 实例化的对象,单例模式.
-     * @var \iphp\db\Redis
-     */
-    static private $_instance=array();
-     
-    private  $k;
-     
-    //连接属性数组
-    protected $attr=array(
-        //连接超时时间，redis配置文件中默认为300秒
-        'timeout'=>30,
-        //选择的数据库。
-        'db_id'=>0,
-    );
-     
-    //什么时候重新建立连接
-    protected $expireTime;
-     
-    protected $host;
-     
-    protected $port;
-     
+    private static $instance;
+    protected $db = 0;
+    protected $port = 6379;
+    protected $host = '127.0.0.1';
          
-    private function __construct($config,$attr=array())
+    private function __construct()
     {
-        $this->attr        =    array_merge($this->attr,$attr);
-        $this->redis    =    new Redis();
-        $this->port        =    $config['port'] ? $config['port'] : 6379;
-        $this->host        =    $config['host'];
-        $this->redis->connect($this->host, $this->port, $this->attr['timeout']);
-         
-        if($config['auth'])
-        {
-            $this->auth($config['auth']);
-            $this->auth    =    $config['auth'];
-        }
-         
-        $this->expireTime    =    time() + $this->attr['timeout'];
+        $this->redis = new \Redis();
+        $this->redis->connect($this->host, $this->port);
+        $this->redis->select($this->db);
     }
-     
-    /**
-     * 得到实例化的对象.
-     * 为每个数据库建立一个连接
-     * 如果连接超时，将会重新建立一个连接
-     * @param array $config
-     * @param int $dbId
-     * @return \iphp\db\Redis
-     */
-    public static function getInstance($config, $attr = array())
+
+    private function __clone () {}
+
+    public static function getInstance()
     {
-        //如果是一个字符串，将其认为是数据库的ID号。以简化写法。
-        if(!is_array($attr))
-        {
-            $dbId    =    $attr;
-            $attr    =    array();
-            $attr['db_id']    =    $dbId;
+        if (! (self::$instance instanceof self)) {
+            self::$instance = new self();
         }
-         
-        $attr['db_id']    =    $attr['db_id'] ? $attr['db_id'] : 0;
-        
-         
-        $k    =    md5(implode('', $config).$attr['db_id']);
-        if(! (static::$_instance[$k] instanceof self))
-        {
-           
-            static::$_instance[$k] = new self($config,$attr);
-            static::$_instance[$k]->k        =    $k;
-            static::$_instance[$k]->dbId    =    $attr['db_id'];
-             
-            //如果不是0号库，选择一下数据库。
-            if($attr['db_id'] != 0){
-                static::$_instance[$k]->select($attr['db_id']);
-            }
-        }
-        elseif( time() > static::$_instance[$k]->expireTime)
-        {
-            static::$_instance[$k]->close();
-            static::$_instance[$k]         =     new self($config,$attr);
-            static::$_instance[$k]->k    =    $k;
-            static::$_instance[$k]->dbId=    $attr['db_id'];
-              
-            //如果不是0号库，选择一下数据库。
-            if($attr['db_id']!=0){
-                static::$_instance[$k]->select($attr['db_id']);
-            }
-        }
-        return static::$_instance[$k];
+        return self::$instance;
     }
-     
-    private function __clone(){}
-     
+
     /**
      * 执行原生的redis操作
      * @return \Redis
