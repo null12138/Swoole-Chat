@@ -6,30 +6,33 @@
 	<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
 	<link rel="stylesheet" type="text/css" href="static/css/reset.css">
 	<link rel="stylesheet" type="text/css" href="static/emoji/emoji.css">
+	<link rel="stylesheet" type="text/css" href="//at.alicdn.com/t/font_1252484_c4ri7kr72u.css">
 </head>
 <style type="text/css">
+.icon-head{font-size: 40px;}
 .body{display: flex; align-items: center; justify-content: center; height: 100%;}
 .chat-wrap{height: 600px; width: 750px; border: 1px solid #d9d9d9; box-shadow: 1px 1px 50px rgba(0,0,0,.3); overflow: hidden; border-radius: 3px;}
 .chat-member{float: left; width: 25%; background-color: #ececec; height: 100%; box-sizing: border-box; padding: 5px 5px;}
 .chat-body{float: left; height: 100%; width: 75%;}
 .chat-self{white-space: nowrap; margin: 5px 0; padding: 5px; height: 50px; box-sizing: border-box; text-align: left; line-height: 40px; cursor: default; border-radius: 3px;}
-.chat-self img{height: 40px; width: 40px;}
 .chat-self span{height: 40px; display: inline-block; vertical-align: top; padding-left: 10px; width: calc(100% - 50px); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;}
-.chat-online{text-align: center; height: 40px; line-height: 40px; border-radius: 3px; background-color: #fcfcfc;}
-.chat-member-list{height: calc(100% - 90px); overflow-y: auto;}
+.chat-line{height: 1px; background-color: #ddd;}
+.chat-member-list{height: calc(100% - 61px); overflow-y: auto;}
 .chat-member-list li{white-space: nowrap; margin: 5px 0; padding: 5px; height: 50px; box-sizing: border-box; text-align: left; line-height: 40px; cursor: default; border-radius: 3px;}
-.chat-member-list li img{width: 40px; height: 40px; vertical-align: top;}
 .chat-member-list li span{height: 40px; display: inline-block; vertical-align: top; padding-left: 10px; width: calc(100% - 50px); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;}
-.chat-member-list li:hover{background-color: #fcfcfc;}
+.chat-member-list li:hover{background-color: #fbfbfb;}
+.chat-member-list li.chat-user-active{background-color: #fcfcfc;}
 .chat-title{background-color: #f8f8f8; text-align: center; font-size: 16px; font-weight: bold; height: 40px; line-height: 40px;}
+.chat-list ul{display: none;}
 .chat-main{height: 380px; overflow: auto; padding: 0 15px 15px 15px; box-sizing: border-box; overflow: auto;}
+.chat-list ul.chat-main-active{display: block;}
 .chat-mine,.chat-other{overflow: hidden; margin-top: 10px;}
+.chat-user-list-0{position: relative;}
+.chat-user-list-0 em{position: absolute; left: 100px;}
 .chat-content{position: relative; line-height: 22px; padding: 6px 14px; border-radius: 3px; word-break: break-all; display: inline-block; margin-top: 5px; text-align: left;}
 .chat-content img{vertical-align: middle;}
 .chat-mine .chat-user{float: right;}
-.chat-mine .chat-user img{width: 40px; height: 40px;}
 .chat-other .chat-user{float: left;}
-.chat-other .chat-user img{width: 40px; height: 40px;}
 .chat-mine .chat-text{float: right; width: calc(100% - 40px); text-align: right; padding-right: 10px; box-sizing: border-box; position: relative;}
 .chat-mine .chat-text:after{border-top-color: #5fb878; content: ''; position: absolute; width: 0; height: 0; border-style: solid dashed dashed; border-color: #5fb878 transparent transparent; overflow: hidden; border-width: 10px; right: 0; top: 30px;}
 .chat-other .chat-text{float: left; width: calc(100% - 40px); text-align: left; padding-left: 10px; box-sizing: border-box; position: relative;}
@@ -39,8 +42,8 @@
 .chat-other .chat-text .chat-content{background-color: #e2e2e2; color: #333;}
 .chat-footer{border-top: 1px solid #f1f1f1; box-sizing: border-box;}
 .chat-tool{padding: 0 8px; height: 38px; line-height: 38px; position: relative;}
-.chat-tool img{width: 28px; height: 28px; vertical-align: middle; padding: 2px; box-sizing: border-box;}
-.chat-tool img:hover{background-color: #eee;}
+.chat-tool i{font-size: 24px; padding: 3px;}
+.chat-tool i:hover{background-color: #eee;}
 .chat-textarea{margin-left: 10px;}
 .chat-textarea textarea{border: none; resize: none; overflow: auto; width: 100%; height: 96px; display: block; outline: 0; font-size: 14px; font-family: '微软雅黑';}
 .chat-bottom{height: 46px; position: relative;}
@@ -50,14 +53,18 @@
 <div class="chat-wrap">
 	<div class="chat-member">
 		<div class="chat-self"></div>
-		<div class="chat-online">在线用户（<span>0</span>）</div>
-		<ul class="chat-member-list"></ul>
+		<div class="chat-line"></div>
+		<ul class="chat-member-list">
+			<li class="chat-user chat-user-list-0 chat-user-active" onclick="action.switch(0,this);"><i class="iconfont icon-head icon-qunzu"></i><span>群聊</span><em>(<i>0</i>人)</em></li>
+		</ul>
 	</div>
 	<div class="chat-body">
-		<div class="chat-title">WebSocket聊天 v1.0</div>
-		<ul class="chat-main"></ul>
+		<div class="chat-title">群聊</div>
+		<div class="chat-list">
+			<ul class="chat-main chat-main-list-0 chat-main-active"></ul>
+		</div>
 		<div class="chat-footer">
-			<div class="chat-tool"><img class="emotion" src="static/img/emoji.png"></div>
+			<div class="chat-tool"><i class="iconfont icon-biaoqing emotion"></i></div>
 			<div class="chat-textarea">
 				<textarea id="textarea" name="textarea"></textarea>
 			</div>
@@ -73,6 +80,7 @@
 <script type="text/javascript">
 var name = null;
 var ws = null;
+var target = 0;	//默认群聊
 layui.use(['layer'], function(){
 	var layer = layui.layer;
 	layer.ready(function() {
@@ -91,7 +99,7 @@ layui.use(['layer'], function(){
 				data.name = value;
 				data.type = 2;
 				ws.send(JSON.stringify(data));
-				var content = '<img src="static/img/default_head.png"><span>'+ value +'</span>';
+				var content = '<i class="iconfont icon-head icon-yonghu"></i><span>'+ value +'</span>';
 				$('.chat-self').html(content);
 			}
 			ws.onmessage = function(e) {
@@ -99,38 +107,54 @@ layui.use(['layer'], function(){
 				switch (data.type) {
 					case 0:
 						//统计在线用户数量
-						$('.chat-online span').text(data.total);
+						$('.chat-user-list-0 em i').text(data.total);
 						break;
 					case 1:
 						//给每个用户发送新用户连接提醒
-						var cname = 'list-' + data.fd;
-						$('.chat-member-list').append('<li class="'+ cname +'"><img src="static/img/default_head.png"><span>'+ data.name +'</span></li>');
+						var uclass = 'chat-user chat-user-list-' + data.fd;
+						$('.chat-member-list').append('<li class="'+ uclass +'" onclick="action.switch('+ data.fd +',this)"><i class="iconfont icon-head icon-yonghu"></i><span>'+ data.name +'</span></li>');
+						var cclass = 'chat-main chat-main-list-' + data.fd;
+						$('.chat-list').append('<ul class="'+ cclass +'"></ul>');
 						layer.msg(data.name + '加入了群聊',{
 							offset: 't'
 						})
 						break;
 					case 2:
 						//获取新连接用户的聊天列表数据
+						var user = '';
 						var content = '';
 						$.each(JSON.parse(data.list), function(index, val) {
-							var cname = 'list-' + val.fd;
-							content += '<li class="'+ cname +'"><img src="static/img/default_head.png"><span>'+ val.name +'</span></li>';
+							var uclass = 'chat-user chat-user-list-' + val.fd;
+							user += '<li class="'+ uclass +'" onclick="action.switch('+ val.fd +',this)"><i class="iconfont icon-head icon-yonghu"></i><span>'+ val.name +'</span></li>';
+							var cclass = 'chat-main chat-main-list-' + val.fd;
+							content += '<ul class="'+ cclass +'"></ul>';
 						})
-						$('.chat-member-list').append(content);
+						$('.chat-member-list').append(user);
+						$('.chat-list').append(content);
 						break;
 					case 3:
 						//有用户退出连接
-						$('.list-' + data.fd).remove();
+						$('.chat-user-list-' + data.fd).remove();
+						if ($('.chat-main-list-' + data.fd).hasClass('chat-main-active')) {
+							//如果正在聊天的对象退出了群聊，则默认选中群聊
+							action.switch(0);
+						}
+						$('.chat-main-list-' + data.fd).remove();
 						layer.msg(data.name + '退出了群聊',{
 							offset: 't'
 						})
 						break;
 					case 4:
 						//处理接收到的用户消息
-						var cname = 'chat-other chat-list-' + data.fd;
-						var content = '<li class="'+ cname +'"><div class="chat-user"><img src="static/img/default_head.png"></div><div class="chat-text"><div class="chat-info">'+ data.name +'</div><div class="chat-content">'+ action.replace_em(data.text) +'</div></div></li>';
-						$('.chat-main').append(content);
-						$('.chat-main').scrollTop($('.chat-main')[0].scrollHeight);
+						var content = '<li class="chat-other"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-text"><div class="chat-info">'+ data.name +'</div><div class="chat-content">'+ action.replace_em(data.text) +'</div></div></li>';
+						if (data.target == 0) {
+							$('.chat-main-list-' + data.target).append(content);
+							$('.chat-main-list-' + data.target).scrollTop($('.chat-main-list-' + data.target)[0].scrollHeight);
+						} else {
+							$('.chat-main-list-' + data.fd).append(content);
+							$('.chat-main-list-' + data.fd).scrollTop($('.chat-main-list-' + data.fd)[0].scrollHeight);
+						}
+						
 				}
 			}
 			ws.onclose = function(e) {
@@ -157,6 +181,19 @@ layui.use(['layer'], function(){
 	})
 });
 var action = {
+	//切换聊天对象
+	switch: function(fd,_this) {
+		target = fd;
+		if (fd == 0) {
+			$('.chat-title').text($('.chat-user-list-0').children('span').text());
+		} else {
+			$('.chat-title').text($(_this).children('span').text());
+		}
+		$('.chat-user').removeClass('chat-user-active');
+		$('.chat-main').removeClass('chat-main-active');
+		$('.chat-user-list-' + fd).addClass('chat-user-active');
+		$('.chat-main-list-' + fd).addClass('chat-main-active');
+	},
 	//发送消息
 	send: function() {
 		var text = $('#textarea').val();
@@ -168,11 +205,12 @@ var action = {
 		data.type = 4;
 		data.name = name;
 		data.text = text;
+		data.target = target;
 		ws.send(JSON.stringify(data));
-		$('#textarea').val('');
-		var content = '<li class="chat-mine"><div class="chat-user"><img src="static/img/default_head.png"></div><div class="chat-text"><div class="chat-info">'+ name +'</div><div class="chat-content">'+ action.replace_em(text) +'</div></div></li>';
-		$('.chat-main').append(content);
-		$('.chat-main').scrollTop($('.chat-main')[0].scrollHeight);
+		$('#textarea').val('').focus();
+		var content = '<li class="chat-mine"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-text"><div class="chat-info">'+ name +'</div><div class="chat-content">'+ action.replace_em(text) +'</div></div></li>';
+		$('.chat-main-active').append(content);
+		$('.chat-main-active').scrollTop($('.chat-main-active')[0].scrollHeight);
 	},
 	//表情转换
 	replace_em: function(str) {
@@ -183,6 +221,7 @@ var action = {
 		return str;
 	}
 }
+
 //回车发送，Ctrl+回车换行
 $('#textarea').keydown(function(event){
 	if (event.ctrlKey && event.keyCode == 13) {
@@ -192,13 +231,6 @@ $('#textarea').keydown(function(event){
 		action.send();
 	}
 });
-// $('.chat-btn-send').hover(function() {
-// 	layer.tips('按 Ctrl + Enter 换行', '.chat-btn-send',{
-// 		time: 0
-// 	});
-// }, function() {
-// 	layer.closeAll('tips');
-// });
 
 //表情操作
 $(function(){

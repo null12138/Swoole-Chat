@@ -21,7 +21,7 @@
 		$(this).click(function(e){
 			var strFace, labFace;
 			if($('#'+id).length<=0){
-				strFace = '<div id="'+id+'" style="position:absolute;display:none;z-index:1000;top:-200px;left:0;" class="qqFace">' +
+				strFace = '<div id="'+id+'" style="position:absolute;display:none;z-index:1000;top:-210px;left:0;" class="qqFace">' +
 							  '<table border="0" cellspacing="0" cellpadding="0"><tr>';
 				for(var i=1; i<=75; i++){
 					labFace = '['+tip+i+']';
