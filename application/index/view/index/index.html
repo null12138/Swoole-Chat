@@ -11,7 +11,7 @@
 <style type="text/css">
 .icon-head{font-size: 40px;}
 .body{display: flex; align-items: center; justify-content: center; height: 100%;}
-.chat-wrap{height: 600px; width: 750px; border: 1px solid #d9d9d9; box-shadow: 1px 1px 50px rgba(0,0,0,.3); overflow: hidden; border-radius: 3px;}
+.chat-wrap{height: 600px; width: 750px; border: 1px solid #d9d9d9; box-shadow: 1px 1px 50px rgba(0,0,0,.3); overflow: hidden; border-radius: 3px; display: none;}
 .chat-member{float: left; width: 25%; background-color: #ececec; height: 100%; box-sizing: border-box; padding: 5px 5px;}
 .chat-body{float: left; height: 100%; width: 75%;}
 .chat-self{white-space: nowrap; margin: 5px 0; padding: 5px; height: 50px; box-sizing: border-box; text-align: left; line-height: 40px; cursor: default; border-radius: 3px;}
@@ -27,8 +27,8 @@
 .chat-main{height: 380px; overflow: auto; padding: 0 15px 15px 15px; box-sizing: border-box; overflow: auto;}
 .chat-list ul.chat-main-active{display: block;}
 .chat-mine,.chat-other{overflow: hidden; margin-top: 10px;}
-.chat-user-list-0{position: relative;}
-.chat-user-list-0 em{position: absolute; left: 100px;}
+.chat-member-list li{position: relative;}
+.chat-user strong{position: absolute; right: 10px; width: 20px; height: 20px; border-radius: 11px; background-color: #f00; text-align: center; color: #fff; top: 13px; line-height: 20px; font-size: 12px; padding: 1px;}
 .chat-content{position: relative; line-height: 22px; padding: 6px 14px; border-radius: 3px; word-break: break-all; display: inline-block; margin-top: 5px; text-align: left;}
 .chat-content img{vertical-align: middle;}
 .chat-mine .chat-user{float: right;}
@@ -55,7 +55,7 @@
 		<div class="chat-self"></div>
 		<div class="chat-line"></div>
 		<ul class="chat-member-list">
-			<li class="chat-user chat-user-list-0 chat-user-active" onclick="action.switch(0,this);"><i class="iconfont icon-head icon-qunzu"></i><span>群聊</span><em>(<i>0</i>人)</em></li>
+			<li class="chat-user chat-user-list-0 chat-user-active" onclick="action.switch(0,this);"><i class="iconfont icon-head icon-qunzu"></i><span>群聊 (<i>0</i>人)</span></li>
 		</ul>
 	</div>
 	<div class="chat-body">
@@ -91,6 +91,7 @@ layui.use(['layer'], function(){
 			btn: ['进入']
 		}, function(value, index, elem){
 			layer.close(index);
+			$('.chat-wrap').fadeIn();
 			name = value;
 			var wsUrl = '{$ws_host}';
 			ws = new WebSocket(wsUrl);
@@ -107,7 +108,7 @@ layui.use(['layer'], function(){
 				switch (data.type) {
 					case 0:
 						//统计在线用户数量
-						$('.chat-user-list-0 em i').text(data.total);
+						$('.chat-user-list-0 span i').text(data.total);
 						break;
 					case 1:
 						//给每个用户发送新用户连接提醒
@@ -147,14 +148,24 @@ layui.use(['layer'], function(){
 					case 4:
 						//处理接收到的用户消息
 						var content = '<li class="chat-other"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-text"><div class="chat-info">'+ data.name +'</div><div class="chat-content">'+ action.replace_em(data.text) +'</div></div></li>';
+						var fd = null;
 						if (data.target == 0) {
-							$('.chat-main-list-' + data.target).append(content);
-							$('.chat-main-list-' + data.target).scrollTop($('.chat-main-list-' + data.target)[0].scrollHeight);
+							fd = 0; 
 						} else {
-							$('.chat-main-list-' + data.fd).append(content);
-							$('.chat-main-list-' + data.fd).scrollTop($('.chat-main-list-' + data.fd)[0].scrollHeight);
+							fd = data.fd;
 						}
-						
+						$('.chat-main-list-' + fd).append(content);
+						var current = $('.chat-user-list-' + fd).hasClass('chat-user-active');
+						if (current == false) {
+							//如果接收消息的聊天框没有激活，则增加未读消息的显示
+							var flag = $('.chat-user-list-' + fd).children('strong').get(0);
+							if (typeof(flag) == 'undefined') {
+								$('.chat-user-list-' + fd).append('<strong>1</strong>');
+							} else {
+								var num = parseInt($('.chat-user-list-' + fd).children('strong').text());
+								$('.chat-user-list-' + fd).children('strong').text(num + 1);
+							}
+						}
 				}
 			}
 			ws.onclose = function(e) {
@@ -185,13 +196,14 @@ var action = {
 	switch: function(fd,_this) {
 		target = fd;
 		if (fd == 0) {
-			$('.chat-title').text($('.chat-user-list-0').children('span').text());
+			$('.chat-title').text('群聊');
 		} else {
 			$('.chat-title').text($(_this).children('span').text());
 		}
 		$('.chat-user').removeClass('chat-user-active');
 		$('.chat-main').removeClass('chat-main-active');
 		$('.chat-user-list-' + fd).addClass('chat-user-active');
+		$('.chat-user-list-' + fd).children('strong').remove();
 		$('.chat-main-list-' + fd).addClass('chat-main-active');
 	},
 	//发送消息
