@@ -84,6 +84,10 @@ var target = 0;	//默认群聊
 layui.use(['layer'], function(){
 	var layer = layui.layer;
 	layer.ready(function() {
+		if (typeof WebSocket == 'undefined') {
+			layer.msg('抱歉，该浏览器不支持WebScoket API，请升级浏览器！');
+			return false;
+		}
 		layer.prompt({
 			value: '佚名',
 			title: '请输入昵称',
