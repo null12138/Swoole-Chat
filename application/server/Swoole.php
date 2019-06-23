@@ -11,10 +11,13 @@ class Swoole extends Server
 	protected $serverType = 'socket';
 	protected $mode = SWOOLE_PROCESS;
 	protected $sockType = SWOOLE_SOCK_TCP;
+	protected $sockType = SWOOLE_SOCK_TCP | SWOOLE_SSL;
 	protected $option = [ 
-		'worker_num'=> 2,
-		'daemonize'	=> false,
-		'backlog'	=> 128
+		'worker_num'	=> 1,
+		'daemonize'		=> false,
+		'backlog'		=> 128,
+		'ssl_cert_file'	=> '/etc/nginx/ssl/1_chat.xuyiwu.com_bundle.crt',
+		'ssl_key_file'	=> '/etc/nginx/ssl/2_chat.xuyiwu.com.key'
 	];
 	protected $users = [];
 
@@ -42,19 +45,29 @@ class Swoole extends Server
 						$server->push($fd,json_encode($data));
 					}
 				}
+				// //查询出所有用户
+				// $users = Redis::getInstance()->hGetAll('chat-member');
+				// if ($users) {
+				// 	//获取新连接用户的列表数据
+				// 	foreach ($users as $key => $value) {
+				// 		$users[$key] = json_decode($value,true);
+				// 	}
+				// 	$res['type'] = 2;
+				// 	$res['list'] = json_encode($users);
+				// 	$server->push($frame->fd,json_encode($res));
+				// }
+				// //将新用户数据保存
+				// Redis::getInstance()->hSet('chat-member',$frame->fd,json_encode(['fd' => $frame->fd,'name' => $data['name']]));
+				
 				//查询出所有用户
-				$users = Redis::getInstance()->hGetAll('chat-member');
+				$users = Db::name('temp')->field('fd,name')->select();
 				if ($users) {
-					//获取新连接用户的列表数据
-					foreach ($users as $key => $value) {
-						$users[$key] = json_decode($value,true);
-					}
 					$res['type'] = 2;
 					$res['list'] = json_encode($users);
 					$server->push($frame->fd,json_encode($res));
 				}
 				//将新用户数据保存
-				Redis::getInstance()->hSet('chat-member',$frame->fd,json_encode(['fd' => $frame->fd,'name' => $data['name']]));
+				Db::name('temp')->insert(['fd' => $frame->fd,'name' => $data['name']]);
 				break;
 			case 3:
 				# code...
@@ -84,7 +97,8 @@ class Swoole extends Server
 	}
 
 	public function onClose($server,$fd) {
-		$user = json_decode(Redis::getInstance()->hGet('chat-member',$fd),true);
+		$user = Db::name('temp')->where('fd',$fd)->find();
+		//$user = json_decode(Redis::getInstance()->hGet('chat-member',$fd),true);
 		$data = array(
 			'type'	=> 3,
 			'name'	=> $user['name'],
@@ -99,7 +113,8 @@ class Swoole extends Server
 			}
 		}
 		//删除用户
-		Redis::getInstance()->hdel('chat-member',$fd);
+		Db::name('temp')->where('fd',$fd)->delete();
+		//Redis::getInstance()->hdel('chat-member',$fd);
 		$data['type'] = 0;
 		$data['total'] = $i;
 		unset($data['fd']);
