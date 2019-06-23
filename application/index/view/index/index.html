@@ -169,6 +169,8 @@ layui.use(['layer'], function(){
 								var num = parseInt($('.chat-user-list-' + fd).children('strong').text());
 								$('.chat-user-list-' + fd).children('strong').text(num + 1);
 							}
+						} else {
+							$('.chat-main-list-' + fd).scrollTop($('.chat-main-list-' + fd)[0].scrollHeight);
 						}
 				}
 			}
