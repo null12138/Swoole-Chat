@@ -30,7 +30,7 @@
 .chat-member-list li{position: relative;}
 .chat-user strong{position: absolute; right: 10px; width: 20px; height: 20px; border-radius: 11px; background-color: #f00; text-align: center; color: #fff; top: 13px; line-height: 20px; font-size: 12px; padding: 1px;}
 .chat-text .chat-content{position: relative; line-height: 22px; padding: 6px 14px; border-radius: 3px; word-break: break-all; display: inline-block; margin-top: 5px; text-align: left;}
-.chat-content img{vertical-align: middle;}
+.chat-content img{border: 1px solid #ccc; border-radius: 3px;}
 .chat-mine .chat-user{float: right;}
 .chat-other .chat-user{float: left;}
 .chat-mine .chat-text{float: right; width: calc(100% - 40px); text-align: right; padding-right: 10px; box-sizing: border-box; position: relative;}
@@ -73,7 +73,7 @@
 			<ul class="chat-main chat-main-list-0 chat-main-active"></ul>
 		</div>
 		<div class="chat-footer">
-			<div class="chat-tool"><i class="iconfont icon-biaoqing emotion"></i><i class="iconfont icon-tupian"><input type="file" class="send-img" accept="image/gif,image/jpeg,image/jpg,image/png,image/svg,image/ico" capture="camera" onchange="action.sendImg(this)"></i></div>
+			<div class="chat-tool"><i class="iconfont icon-biaoqing emotion"></i><i class="iconfont icon-tupian"><input type="file" class="send-img" accept="image/gif,image/jpeg,image/jpg,image/png,image/svg" capture="camera" onchange="action.sendImg(this)"></i></div>
 			<div class="chat-textarea">
 				<textarea id="textarea" name="textarea"></textarea>
 			</div>
@@ -105,6 +105,7 @@ layui.use(['layer'], function(){
 			btn: ['进入']
 		}, function(value, index, elem){
 			name = value;
+			//判断昵称是否重复
 			$.ajax({
 				url: 'exists',
 				async: false,
@@ -125,6 +126,12 @@ layui.use(['layer'], function(){
 				}
 			})
 		})
+		action.lliInit();
+	})
+});
+var action = {
+	//进入聊天室的前置操作
+	lliInit: function() {
 		$('.layui-layer-input').select();
 		$('.layui-layer-input').on('input propertychange', function() {
 			var text = $('.layui-layer-input').val();
@@ -135,16 +142,13 @@ layui.use(['layer'], function(){
 				layer.msg('长度不能超过20');
 			}
 		});
-		//回车进入聊天室
 		$('.layui-layer-input').keydown(function(event) {
 			if (event.keyCode == 13) {
 				event.preventDefault();
 				$('.layui-layer-btn0').trigger('click');
 			}
 		});
-	})
-});
-var action = {
+	},
 	//建立WebSocket服务
 	buildWS: function(value) {
 		ws = new WebSocket('{$ws_host}');
@@ -288,21 +292,37 @@ var action = {
 	//发送图片
 	sendImg: function(_this) {
 		var img = $(_this)[0].files[0];
-		var fr = new FileReader();
-		var data = {};
-		data.type = 5;
-		data.name = name;
-		data.time = action.currentTime();
-		data.target = target;
-		$('#textarea').val('').focus();
-		fr.onload = function() {
-			data.text = this.result;
-			ws.send(JSON.stringify(data));
-			var content = '<li class="chat-mine"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-img"><div class="chat-info"><span class="chat-time">'+ data.time +'</span><span class="chat-name">'+ data.name +'</span></div><div class="chat-content"><img src="'+ this.result +'"></div></div></li>';
-			$('.chat-main-active').append(content);
-			$('.chat-main-active').scrollTop($('.chat-main-active')[0].scrollHeight);
+		if (typeof(img) != 'undefined') {
+			var extStart = img.name.lastIndexOf('.');
+			var ext = img.name.substring(extStart, img.name.length).toUpperCase();
+			if (ext != '.PNG' && ext != '.JPG' && ext != '.JPEG' && ext != '.GIF') {
+				layer.msg('请选择图片');
+				action.resetImg();
+				return false;
+			}
+			var max = 5;
+			if (img.size > max * 1024 * 1024) {
+				layer.msg('图片大小不能超过'+ max +'MB');
+				action.resetImg();
+				return false;
+			}
+			var fr = new FileReader();
+			var data = {};
+			data.type = 5;
+			data.name = name;
+			data.time = action.currentTime();
+			data.target = target;
+			$('#textarea').val('').focus();
+			fr.readAsDataURL(img);
+			fr.onload = function() {
+				data.text = this.result;
+				ws.send(JSON.stringify(data));
+				var content = '<li class="chat-mine"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-img"><div class="chat-info"><span class="chat-time">'+ data.time +'</span><span class="chat-name">'+ data.name +'</span></div><div class="chat-content"><img src="'+ this.result +'"></div></div></li>';
+				$('.chat-main-active').append(content);
+				$('.chat-main-active').scrollTop($('.chat-main-active')[0].scrollHeight);
+				action.resetImg();
+			}
 		}
-		fr.readAsDataURL(img);
 	},
 	//表情转换
 	replace_em: function(str) {
@@ -327,6 +347,10 @@ var action = {
 		mm = mm < 10 ? '0' + mm : mm;
 		s = s < 10 ? '0' + s : s;
 		return (y + '-' + m + '-' + d + ' ' + h + ':' + mm + ':' + s);
+	},
+	//重置input图片上传框
+	resetImg: function() {
+		$('.icon-tupian').html('<input type="file" class="send-img" accept="image/gif,image/jpeg,image/jpg,image/png,image/svg" capture="camera" onchange="action.sendImg(this)">');
 	}
 }
 
