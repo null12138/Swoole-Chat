@@ -6,7 +6,7 @@
 	<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
 	<link rel="stylesheet" type="text/css" href="static/css/reset.css">
 	<link rel="stylesheet" type="text/css" href="static/emoji/emoji.css">
-	<link rel="stylesheet" type="text/css" href="//at.alicdn.com/t/font_1252484_c4ri7kr72u.css">
+	<link rel="stylesheet" type="text/css" href="//at.alicdn.com/t/font_1252484_s2sjdiok7to.css">
 </head>
 <style type="text/css">
 .icon-head{font-size: 40px;}
@@ -29,27 +29,34 @@
 .chat-mine,.chat-other{overflow: hidden; margin-top: 10px;}
 .chat-member-list li{position: relative;}
 .chat-user strong{position: absolute; right: 10px; width: 20px; height: 20px; border-radius: 11px; background-color: #f00; text-align: center; color: #fff; top: 13px; line-height: 20px; font-size: 12px; padding: 1px;}
-.chat-content{position: relative; line-height: 22px; padding: 6px 14px; border-radius: 3px; word-break: break-all; display: inline-block; margin-top: 5px; text-align: left;}
+.chat-text .chat-content{position: relative; line-height: 22px; padding: 6px 14px; border-radius: 3px; word-break: break-all; display: inline-block; margin-top: 5px; text-align: left;}
 .chat-content img{vertical-align: middle;}
 .chat-mine .chat-user{float: right;}
 .chat-other .chat-user{float: left;}
 .chat-mine .chat-text{float: right; width: calc(100% - 40px); text-align: right; padding-right: 10px; box-sizing: border-box; position: relative;}
+.chat-mine .chat-img{float: right; width: calc(100% - 40px); text-align: right; padding-right: 10px; box-sizing: border-box; position: relative;}
+.chat-other .chat-img{float: right; width: calc(100% - 40px); text-align: left; padding-left: 10px; box-sizing: border-box; position: relative;}
 .chat-mine .chat-text:after{border-top-color: #5fb878; content: ''; position: absolute; width: 0; height: 0; border-style: solid dashed dashed; border-color: #5fb878 transparent transparent; overflow: hidden; border-width: 10px; right: 0; top: 30px;}
 .chat-other .chat-text{float: left; width: calc(100% - 40px); text-align: left; padding-left: 10px; box-sizing: border-box; position: relative;}
 .chat-other .chat-text:after{border-top-color: #e2e2e2; content: ''; position: absolute; width: 0; height: 0; border-style: solid dashed dashed; border-color: #e2e2e2 transparent transparent; overflow: hidden; border-width: 10px; left: 0; top: 30px;}
-.chat-mine .chat-text .chat-info,.chat-other .chat-text .chat-info{color: #999; font-size: 12px; white-space: nowrap;}
+.chat-mine .chat-info,.chat-other .chat-info{color: #999; font-size: 12px; white-space: nowrap;}
 .chat-mine .chat-time{margin-right: 10px;}
 .chat-other .chat-name{margin-right: 10px;}
 .chat-mine .chat-text .chat-content{background-color: #5fb878; color: #fff;}
 .chat-other .chat-text .chat-content{background-color: #e2e2e2; color: #333;}
+.chat-img .chat-content{margin-top: 5px;}
+.chat-img img{max-width: 90%;}
 .chat-footer{border-top: 1px solid #f1f1f1; box-sizing: border-box;}
 .chat-tool{padding: 0 8px; height: 38px; line-height: 38px; position: relative;}
-.chat-tool i{font-size: 24px; padding: 3px;}
+.chat-tool i{font-size: 24px; padding: 3px; margin: 0 2px;}
 .chat-tool i:hover{background-color: #eee;}
 .chat-textarea{margin-left: 10px;}
 .chat-textarea textarea{border: none; resize: none; overflow: auto; width: 100%; height: 96px; display: block; outline: 0; font-size: 14px; font-family: '微软雅黑';}
 .chat-bottom{height: 46px; position: relative;}
 .chat-btn-send{width: 75px; height: 32px; position: absolute; right: 15px; top: 5px; background-color: #5fb878; color: #fff; font-size: 15px; text-align: center; line-height: 32px; cursor: pointer; border-radius: 3px;}
+.chat-btn-tip{display: inline-block; position: absolute; right: 100px; top: 5px; color: #ccc; font-size: 13px; text-align: center; height: 32px; line-height: 32px; cursor: default;}
+.icon-tupian{position: relative;}
+.send-img{position: absolute; font-size: 0; outline: 0; left: 0; top: 0; width: 100%; height: 100%; opacity: 0;}
 </style>
 <body class="body">
 <div class="chat-wrap">
@@ -66,11 +73,12 @@
 			<ul class="chat-main chat-main-list-0 chat-main-active"></ul>
 		</div>
 		<div class="chat-footer">
-			<div class="chat-tool"><i class="iconfont icon-biaoqing emotion"></i></div>
+			<div class="chat-tool"><i class="iconfont icon-biaoqing emotion"></i><i class="iconfont icon-tupian"><input type="file" class="send-img" accept="image/gif,image/jpeg,image/jpg,image/png,image/svg,image/ico" onchange="action.sendImg(this)"></i></div>
 			<div class="chat-textarea">
 				<textarea id="textarea" name="textarea"></textarea>
 			</div>
 			<div class="chat-bottom">
+				<div class="chat-btn-tip">按 Ctrl + Enter 换行</div>
 				<div class="chat-btn-send" onclick="action.send();">发送</div>
 			</div>
 		</div>
@@ -213,6 +221,31 @@ var action = {
 					} else {
 						$('.chat-main-list-' + fd).scrollTop($('.chat-main-list-' + fd)[0].scrollHeight);
 					}
+					break;
+				case 5:
+					//处理接收到的图片
+					var content = '<li class="chat-other"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-img"><div class="chat-info"><span class="chat-name">'+ data.name +'</span><span class="chat-time">'+ data.time +'</span></div><div class="chat-content"><img src="'+ data.text +'"></div></div></li>';
+					var fd = null;
+					if (data.target == 0) {
+						fd = 0; 
+					} else {
+						fd = data.fd;
+					}
+					$('.chat-main-list-' + fd).append(content);
+					var current = $('.chat-user-list-' + fd).hasClass('chat-user-active');
+					if (current == false) {
+						//如果接收消息的聊天框没有激活，则增加未读消息的显示
+						var flag = $('.chat-user-list-' + fd).children('strong').get(0);
+						if (typeof(flag) == 'undefined') {
+							$('.chat-user-list-' + fd).append('<strong>1</strong>');
+						} else {
+							var num = parseInt($('.chat-user-list-' + fd).children('strong').text());
+							$('.chat-user-list-' + fd).children('strong').text(num + 1);
+						}
+					} else {
+						$('.chat-main-list-' + fd).scrollTop($('.chat-main-list-' + fd)[0].scrollHeight);
+					}
+					break;
 			}
 		}
 		ws.onclose = function(e) {
@@ -251,6 +284,25 @@ var action = {
 		var content = '<li class="chat-mine"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-text"><div class="chat-info"><span class="chat-time">'+ data.time +'</span><span class="chat-name">'+ data.name +'</span></div><div class="chat-content">'+ action.replace_em(text) +'</div></div></li>';
 		$('.chat-main-active').append(content);
 		$('.chat-main-active').scrollTop($('.chat-main-active')[0].scrollHeight);
+	},
+	//发送图片
+	sendImg: function(_this) {
+		var img = $(_this)[0].files[0];
+		var fr = new FileReader();
+		var data = {};
+		data.type = 5;
+		data.name = name;
+		data.time = action.currentTime();
+		data.target = target;
+		$('#textarea').val('').focus();
+		fr.onload = function() {
+			data.text = this.result;
+			ws.send(JSON.stringify(data));
+			var content = '<li class="chat-mine"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-img"><div class="chat-info"><span class="chat-time">'+ data.time +'</span><span class="chat-name">'+ data.name +'</span></div><div class="chat-content"><img src="'+ this.result +'"></div></div></li>';
+			$('.chat-main-active').append(content);
+			$('.chat-main-active').scrollTop($('.chat-main-active')[0].scrollHeight);
+		}
+		fr.readAsDataURL(img);
 	},
 	//表情转换
 	replace_em: function(str) {

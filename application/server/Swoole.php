@@ -10,7 +10,12 @@ class Swoole extends Server
 	protected $port = 9508;
 	protected $serverType = 'socket';
 	protected $mode = SWOOLE_PROCESS;
-	//protected $sockType = SWOOLE_SOCK_TCP;
+	// protected $sockType = SWOOLE_SOCK_TCP;
+	// protected $option = [ 
+	// 	'worker_num'	=> 1,
+	// 	'daemonize'		=> false,
+	// 	'backlog'		=> 128,
+	// ];
 	protected $sockType = SWOOLE_SOCK_TCP | SWOOLE_SSL;
 	protected $option = [ 
 		'worker_num'	=> 1,
@@ -76,6 +81,28 @@ class Swoole extends Server
 				//收到用户发送的消息
 				$res = array(
 					'type'		=> 4,
+					'fd'		=> $frame->fd,
+					'name'		=> $data['name'],
+					'text'		=> $data['text'],
+					'time'		=> $data['time'],
+					'target'	=> $data['target']
+				);
+				if ($data['target'] == 0) {
+					//群聊消息，推送给所有用户(排除自己)
+					foreach ($server->connections as $fd) {
+						if ($fd != $frame->fd) {
+							$server->push($fd,json_encode($res));
+						}
+					}
+				} else {
+					//1v1消息，推送给目标用户
+					$server->push($data['target'],json_encode($res));
+				}
+				break;
+			case 5:
+				//接收图片消息
+				$res = array(
+					'type'		=> 5,
 					'fd'		=> $frame->fd,
 					'name'		=> $data['name'],
 					'text'		=> $data['text'],
