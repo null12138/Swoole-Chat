@@ -301,7 +301,7 @@ var action = {
 				return false;
 			}
 			var max = 512;
-			if (img.size > max * 1024 * 1024) {
+			if (img.size > max * 1024) {
 				layer.msg('图片大小不能超过'+ max +'KB');
 				action.resetImg();
 				return false;
