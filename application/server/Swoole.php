@@ -14,7 +14,7 @@ class Swoole extends Server
 	protected $sockType = SWOOLE_SOCK_TCP | SWOOLE_SSL;
 	protected $option = [ 
 		'worker_num'	=> 1,
-		'daemonize'		=> false,
+		'daemonize'		=> true,
 		'backlog'		=> 128,
 		'ssl_cert_file'	=> '/etc/nginx/ssl/1_chat.xuyiwu.com_bundle.crt',
 		'ssl_key_file'	=> '/etc/nginx/ssl/2_chat.xuyiwu.com.key'
