@@ -10,11 +10,11 @@ class Swoole extends Server
 	protected $port = 9508;
 	protected $serverType = 'socket';
 	protected $mode = SWOOLE_PROCESS;
-	//protected $sockType = SWOOLE_SOCK_TCP;
+	protected $sockType = SWOOLE_SOCK_TCP;
 	protected $sockType = SWOOLE_SOCK_TCP | SWOOLE_SSL;
 	protected $option = [ 
 		'worker_num'	=> 1,
-		'daemonize'		=> true,
+		'daemonize'		=> false,
 		'backlog'		=> 128,
 		'ssl_cert_file'	=> '/etc/nginx/ssl/1_chat.xuyiwu.com_bundle.crt',
 		'ssl_key_file'	=> '/etc/nginx/ssl/2_chat.xuyiwu.com.key'
@@ -79,6 +79,7 @@ class Swoole extends Server
 					'fd'		=> $frame->fd,
 					'name'		=> $data['name'],
 					'text'		=> $data['text'],
+					'time'		=> $data['time'],
 					'target'	=> $data['target']
 				);
 				if ($data['target'] == 0) {

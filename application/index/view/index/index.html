@@ -38,6 +38,8 @@
 .chat-other .chat-text{float: left; width: calc(100% - 40px); text-align: left; padding-left: 10px; box-sizing: border-box; position: relative;}
 .chat-other .chat-text:after{border-top-color: #e2e2e2; content: ''; position: absolute; width: 0; height: 0; border-style: solid dashed dashed; border-color: #e2e2e2 transparent transparent; overflow: hidden; border-width: 10px; left: 0; top: 30px;}
 .chat-mine .chat-text .chat-info,.chat-other .chat-text .chat-info{color: #999; font-size: 12px; white-space: nowrap;}
+.chat-mine .chat-time{margin-right: 10px;}
+.chat-other .chat-name{margin-right: 10px;}
 .chat-mine .chat-text .chat-content{background-color: #5fb878; color: #fff;}
 .chat-other .chat-text .chat-content{background-color: #e2e2e2; color: #333;}
 .chat-footer{border-top: 1px solid #f1f1f1; box-sizing: border-box;}
@@ -94,90 +96,28 @@ layui.use(['layer'], function(){
 			closeBtn: false,
 			btn: ['进入']
 		}, function(value, index, elem){
-			layer.close(index);
-			$('.chat-wrap').fadeIn();
 			name = value;
-			var wsUrl = '{$ws_host}';
-			ws = new WebSocket(wsUrl);
-			ws.onopen = function(e) {
-				var data = {};
-				data.name = value;
-				data.type = 2;
-				ws.send(JSON.stringify(data));
-				var content = '<i class="iconfont icon-head icon-yonghu"></i><span>'+ value +'</span>';
-				$('.chat-self').html(content);
-			}
-			ws.onmessage = function(e) {
-				var data = JSON.parse(e.data);
-				switch (data.type) {
-					case 0:
-						//统计在线用户数量
-						$('.chat-user-list-0 span i').text(data.total);
-						break;
-					case 1:
-						//给每个用户发送新用户连接提醒
-						var uclass = 'chat-user chat-user-list-' + data.fd;
-						$('.chat-member-list').append('<li class="'+ uclass +'" onclick="action.switch('+ data.fd +',this)"><i class="iconfont icon-head icon-yonghu"></i><span>'+ data.name +'</span></li>');
-						var cclass = 'chat-main chat-main-list-' + data.fd;
-						$('.chat-list').append('<ul class="'+ cclass +'"></ul>');
-						layer.msg(data.name + '加入了群聊',{
-							offset: 't'
-						})
-						break;
-					case 2:
-						//获取新连接用户的聊天列表数据
-						var user = '';
-						var content = '';
-						$.each(JSON.parse(data.list), function(index, val) {
-							var uclass = 'chat-user chat-user-list-' + val.fd;
-							user += '<li class="'+ uclass +'" onclick="action.switch('+ val.fd +',this)"><i class="iconfont icon-head icon-yonghu"></i><span>'+ val.name +'</span></li>';
-							var cclass = 'chat-main chat-main-list-' + val.fd;
-							content += '<ul class="'+ cclass +'"></ul>';
-						})
-						$('.chat-member-list').append(user);
-						$('.chat-list').append(content);
-						break;
-					case 3:
-						//有用户退出连接
-						$('.chat-user-list-' + data.fd).remove();
-						if ($('.chat-main-list-' + data.fd).hasClass('chat-main-active')) {
-							//如果正在聊天的对象退出了群聊，则默认选中群聊
-							action.switch(0);
-						}
-						$('.chat-main-list-' + data.fd).remove();
-						layer.msg(data.name + '退出了群聊',{
-							offset: 't'
-						})
-						break;
-					case 4:
-						//处理接收到的用户消息
-						var content = '<li class="chat-other"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-text"><div class="chat-info">'+ data.name +'</div><div class="chat-content">'+ action.replace_em(data.text) +'</div></div></li>';
-						var fd = null;
-						if (data.target == 0) {
-							fd = 0; 
-						} else {
-							fd = data.fd;
-						}
-						$('.chat-main-list-' + fd).append(content);
-						var current = $('.chat-user-list-' + fd).hasClass('chat-user-active');
-						if (current == false) {
-							//如果接收消息的聊天框没有激活，则增加未读消息的显示
-							var flag = $('.chat-user-list-' + fd).children('strong').get(0);
-							if (typeof(flag) == 'undefined') {
-								$('.chat-user-list-' + fd).append('<strong>1</strong>');
-							} else {
-								var num = parseInt($('.chat-user-list-' + fd).children('strong').text());
-								$('.chat-user-list-' + fd).children('strong').text(num + 1);
-							}
-						} else {
-							$('.chat-main-list-' + fd).scrollTop($('.chat-main-list-' + fd)[0].scrollHeight);
-						}
+			$.ajax({
+				url: 'exists',
+				async: false,
+				type: 'POST',
+				data: {
+					name: name
+				},
+				success: function(response) {
+					if (response.code == 0) {
+						layer.close(index);
+						layer.msg('欢迎进入聊天室');
+						$('.chat-wrap').fadeIn();
+						action.buildWS(name);
+					} else {
+						layer.msg(response.msg);
+						$('.layui-layer-input').select();
+					}
 				}
-			}
-			ws.onclose = function(e) {
-				console.log('连接关闭');
-			}
-		});
+			})
+		})
+		$('.layui-layer-input').select();
 		$('.layui-layer-input').on('input propertychange', function() {
 			var text = $('.layui-layer-input').val();
 			var textlen = $('.layui-layer-input').val().length;
@@ -188,7 +128,6 @@ layui.use(['layer'], function(){
 			}
 		});
 		//回车进入聊天室
-		$('.layui-layer-input').select();
 		$('.layui-layer-input').keydown(function(event) {
 			if (event.keyCode == 13) {
 				event.preventDefault();
@@ -198,6 +137,88 @@ layui.use(['layer'], function(){
 	})
 });
 var action = {
+	//建立WebSocket服务
+	buildWS: function(value) {
+		ws = new WebSocket('{$ws_host}');
+		ws.onopen = function(e) {
+			var data = {};
+			data.name = value;
+			data.type = 2;
+			ws.send(JSON.stringify(data));
+			var content = '<i class="iconfont icon-head icon-yonghu"></i><span>'+ value +'</span>';
+			$('.chat-self').html(content);
+		}
+		ws.onmessage = function(e) {
+			var data = JSON.parse(e.data);
+			switch (data.type) {
+				case 0:
+					//统计在线用户数量
+					$('.chat-user-list-0 span i').text(data.total);
+					break;
+				case 1:
+					//给每个用户发送新用户连接提醒
+					var uclass = 'chat-user chat-user-list-' + data.fd;
+					$('.chat-member-list').append('<li class="'+ uclass +'" onclick="action.switch('+ data.fd +',this)"><i class="iconfont icon-head icon-yonghu"></i><span>'+ data.name +'</span></li>');
+					var cclass = 'chat-main chat-main-list-' + data.fd;
+					$('.chat-list').append('<ul class="'+ cclass +'"></ul>');
+					layer.msg(data.name + '加入了群聊',{
+						offset: 't'
+					})
+					break;
+				case 2:
+					//获取新连接用户的聊天列表数据
+					var user = '';
+					var content = '';
+					$.each(JSON.parse(data.list), function(index, val) {
+						var uclass = 'chat-user chat-user-list-' + val.fd;
+						user += '<li class="'+ uclass +'" onclick="action.switch('+ val.fd +',this)"><i class="iconfont icon-head icon-yonghu"></i><span>'+ val.name +'</span></li>';
+						var cclass = 'chat-main chat-main-list-' + val.fd;
+						content += '<ul class="'+ cclass +'"></ul>';
+					})
+					$('.chat-member-list').append(user);
+					$('.chat-list').append(content);
+					break;
+				case 3:
+					//有用户退出连接
+					$('.chat-user-list-' + data.fd).remove();
+					if ($('.chat-main-list-' + data.fd).hasClass('chat-main-active')) {
+						//如果正在聊天的对象退出了群聊，则默认选中群聊
+						action.switch(0);
+					}
+					$('.chat-main-list-' + data.fd).remove();
+					layer.msg(data.name + '退出了群聊',{
+						offset: 't'
+					})
+					break;
+				case 4:
+					//处理接收到的用户消息
+					var content = '<li class="chat-other"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-text"><div class="chat-info"><span class="chat-name">'+ data.name +'</span><span class="chat-time">'+ data.time +'</span></div><div class="chat-content">'+ action.replace_em(data.text) +'</div></div></li>';
+					var fd = null;
+					if (data.target == 0) {
+						fd = 0; 
+					} else {
+						fd = data.fd;
+					}
+					$('.chat-main-list-' + fd).append(content);
+					var current = $('.chat-user-list-' + fd).hasClass('chat-user-active');
+					if (current == false) {
+						//如果接收消息的聊天框没有激活，则增加未读消息的显示
+						var flag = $('.chat-user-list-' + fd).children('strong').get(0);
+						if (typeof(flag) == 'undefined') {
+							$('.chat-user-list-' + fd).append('<strong>1</strong>');
+						} else {
+							var num = parseInt($('.chat-user-list-' + fd).children('strong').text());
+							$('.chat-user-list-' + fd).children('strong').text(num + 1);
+						}
+					} else {
+						$('.chat-main-list-' + fd).scrollTop($('.chat-main-list-' + fd)[0].scrollHeight);
+					}
+			}
+		}
+		ws.onclose = function(e) {
+			console.log('连接关闭');
+		}
+	},
 	//切换聊天对象
 	switch: function(fd,_this) {
 		target = fd;
@@ -223,10 +244,11 @@ var action = {
 		data.type = 4;
 		data.name = name;
 		data.text = text;
+		data.time = action.currentTime();
 		data.target = target;
 		ws.send(JSON.stringify(data));
 		$('#textarea').val('').focus();
-		var content = '<li class="chat-mine"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-text"><div class="chat-info">'+ name +'</div><div class="chat-content">'+ action.replace_em(text) +'</div></div></li>';
+		var content = '<li class="chat-mine"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-text"><div class="chat-info"><span class="chat-time">'+ data.time +'</span><span class="chat-name">'+ data.name +'</span></div><div class="chat-content">'+ action.replace_em(text) +'</div></div></li>';
 		$('.chat-main-active').append(content);
 		$('.chat-main-active').scrollTop($('.chat-main-active')[0].scrollHeight);
 	},
@@ -237,6 +259,22 @@ var action = {
 		str = str.replace(/\n/g,'<br/>');
 		str = str.replace(/\[em_([0-9]*)\]/g,'<img src="static/emoji/arclist/$1.gif" border="0" />');
 		return str;
+	},
+	//获取当前时间
+	currentTime: function() {
+		date = new Date();
+		var y = date.getFullYear();
+		var m = date.getMonth() + 1;
+		var d = date.getDate();
+		var h = date.getHours();
+		var mm = date.getMinutes();
+		var s = date.getSeconds();
+		m = m < 10 ? '0' + m : m;
+		d = d < 10 ? '0' + d : d;
+		h = h < 10 ? '0' + h : h;
+		mm = mm < 10 ? '0' + mm : mm;
+		s = s < 10 ? '0' + s : s;
+		return (y + '-' + m + '-' + d + ' ' + h + ':' + mm + ':' + s);
 	}
 }
 

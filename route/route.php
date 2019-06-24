@@ -18,6 +18,8 @@
 
 Route::get('/phpinfo', 'index/Index/phpinfo');
 Route::get('/', 'index/Index/index');
+
+Route::post('/exists', 'index/Index/exists');
 return [
 	
 ];
