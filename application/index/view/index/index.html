@@ -118,6 +118,7 @@ layui.use(['layer'], function(){
 						layer.close(index);
 						layer.msg('欢迎进入聊天室');
 						$('.chat-wrap').fadeIn();
+						$('#textarea').focus();
 						action.buildWS(name);
 					} else {
 						layer.msg(response.msg);
@@ -269,6 +270,7 @@ var action = {
 		$('.chat-user-list-' + fd).addClass('chat-user-active');
 		$('.chat-user-list-' + fd).children('strong').remove();
 		$('.chat-main-list-' + fd).addClass('chat-main-active');
+		$('#textarea').focus();
 	},
 	//发送消息
 	send: function() {
