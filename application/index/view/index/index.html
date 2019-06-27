@@ -23,9 +23,10 @@
 .chat-member-list li:hover{background-color: #fbfbfb;}
 .chat-member-list li.chat-user-active{background-color: #fcfcfc;}
 .chat-title{background-color: #f8f8f8; text-align: center; font-size: 16px; font-weight: bold; height: 40px; line-height: 40px;}
-.chat-list ul{display: none;}
-.chat-main{height: 380px; overflow: auto; padding: 0 15px 15px 15px; box-sizing: border-box; overflow: auto;}
-.chat-list ul.chat-main-active{display: block;}
+.chat-list div.chat-main{display: none;}
+.chat-main{height: 380px; overflow: auto; padding: 0 15px 15px 15px; box-sizing: border-box; overflow: auto; position: relative;}
+.chat-main div.typing{position: absolute; left: 0px; bottom: 0px; text-align: center;height: 25px; line-height: 25px; background-color: #f8f8f8; color: #545454; width: 100%;}
+.chat-list div.chat-main-active{display: block;}
 .chat-mine,.chat-other{overflow: hidden; margin-top: 10px;}
 .chat-member-list li{position: relative;}
 .chat-user strong{position: absolute; right: 10px; width: 20px; height: 20px; border-radius: 11px; background-color: #f00; text-align: center; color: #fff; top: 13px; line-height: 20px; font-size: 12px; padding: 1px;}
@@ -45,7 +46,7 @@
 .chat-mine .chat-text .chat-content{background-color: #5fb878; color: #fff;}
 .chat-other .chat-text .chat-content{background-color: #e2e2e2; color: #333;}
 .chat-img .chat-content{margin-top: 5px;}
-.chat-img img{max-width: 90%;}
+.chat-img img{max-width: 86%;}
 .chat-footer{border-top: 1px solid #f1f1f1; box-sizing: border-box;}
 .chat-tool{padding: 0 8px; height: 38px; line-height: 38px; position: relative;}
 .chat-tool i{font-size: 24px; padding: 3px; margin: 0 2px;}
@@ -70,7 +71,7 @@
 	<div class="chat-body">
 		<div class="chat-title">群聊</div>
 		<div class="chat-list">
-			<ul class="chat-main chat-main-list-0 chat-main-active"></ul>
+			<div class="chat-main chat-main-list-0 chat-main-active"></div>
 		</div>
 		<div class="chat-footer">
 			<div class="chat-tool"><i class="iconfont icon-biaoqing emotion"></i><i class="iconfont icon-tupian"><input type="file" class="send-img" accept="image/gif,image/jpeg,image/jpg,image/png,image/svg" capture="camera" onchange="action.sendImg(this)"></i></div>
@@ -88,9 +89,10 @@
 <script type="text/javascript" src="static/emoji/jquery.qqFace.js"></script>
 <script type="text/javascript" src="static/layui/layui.js"></script>
 <script type="text/javascript">
-var name = null;
-var ws = null;
-var target = 0;	//默认群聊
+var name = null;	//聊天昵称
+var ws = null;		//WebSocket服务
+var time = null;	//正在输入定时
+var target = 0;		//当前群聊对象
 layui.use(['layer'], function(){
 	var layer = layui.layer;
 	layer.ready(function() {
@@ -173,7 +175,7 @@ var action = {
 					var uclass = 'chat-user chat-user-list-' + data.fd;
 					$('.chat-member-list').append('<li class="'+ uclass +'" onclick="action.switch('+ data.fd +',this)"><i class="iconfont icon-head icon-yonghu"></i><span>'+ data.name +'</span></li>');
 					var cclass = 'chat-main chat-main-list-' + data.fd;
-					$('.chat-list').append('<ul class="'+ cclass +'"></ul>');
+					$('.chat-list').append('<div class="'+ cclass +'"></div>');
 					layer.msg(data.name + '加入了群聊',{
 						offset: 't'
 					})
@@ -186,7 +188,7 @@ var action = {
 						var uclass = 'chat-user chat-user-list-' + val.fd;
 						user += '<li class="'+ uclass +'" onclick="action.switch('+ val.fd +',this)"><i class="iconfont icon-head icon-yonghu"></i><span>'+ val.name +'</span></li>';
 						var cclass = 'chat-main chat-main-list-' + val.fd;
-						content += '<ul class="'+ cclass +'"></ul>';
+						content += '<div class="'+ cclass +'"></div>';
 					})
 					$('.chat-member-list').append(user);
 					$('.chat-list').append(content);
@@ -205,7 +207,7 @@ var action = {
 					break;
 				case 4:
 					//处理接收到的用户消息
-					var content = '<li class="chat-other"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-text"><div class="chat-info"><span class="chat-name">'+ data.name +'</span><span class="chat-time">'+ data.time +'</span></div><div class="chat-content">'+ action.replace_em(data.text) +'</div></div></li>';
+					var content = '<div class="chat-other"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-text"><div class="chat-info"><span class="chat-name">'+ data.name +'</span><span class="chat-time">'+ data.time +'</span></div><div class="chat-content">'+ action.replace_em(data.text) +'</div></div></div>';
 					var fd = null;
 					if (data.target == 0) {
 						fd = 0; 
@@ -229,7 +231,7 @@ var action = {
 					break;
 				case 5:
 					//处理接收到的图片
-					var content = '<li class="chat-other"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-img"><div class="chat-info"><span class="chat-name">'+ data.name +'</span><span class="chat-time">'+ data.time +'</span></div><div class="chat-content"><img src="'+ data.text +'"></div></div></li>';
+					var content = '<div class="chat-other"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-img"><div class="chat-info"><span class="chat-name">'+ data.name +'</span><span class="chat-time">'+ data.time +'</span></div><div class="chat-content"><img src="'+ data.text +'"></div></div></div>';
 					var fd = null;
 					if (data.target == 0) {
 						fd = 0; 
@@ -251,6 +253,25 @@ var action = {
 						$('.chat-main-list-' + fd).scrollTop($('.chat-main-list-' + fd)[0].scrollHeight);
 					}
 					break;
+				case 6:
+					//正在输入
+					if (data.fd == target) {
+						//如果打开的是对应的聊天窗口，则提示对方正在输入
+						var typingStatus = typeof($('.chat-main-active').children('div.typing').get(0));
+						if (typingStatus == 'undefined') {
+							$('.chat-main-active').append('<div class="typing">对方正在输入...</div>');
+							time = setTimeout(function() {
+								$('div.typing').remove();
+							},800)
+						} else {
+							//刷新定时
+							clearTimeout(time);
+							time = setTimeout(function() {
+								$('div.typing').remove();
+							},800)
+						}
+					}
+					break;
 			}
 		}
 		ws.onclose = function(e) {
@@ -264,6 +285,13 @@ var action = {
 			$('.chat-title').text('群聊');
 		} else {
 			$('.chat-title').text($(_this).children('span').text());
+			//监听消息输入
+			$('#textarea').on('input propertychange', function() {
+				var data = {};
+				data.type = 6;
+				data.target = target;
+				ws.send(JSON.stringify(data));
+			});
 		}
 		$('.chat-user').removeClass('chat-user-active');
 		$('.chat-main').removeClass('chat-main-active');
@@ -287,7 +315,7 @@ var action = {
 		data.target = target;
 		ws.send(JSON.stringify(data));
 		$('#textarea').val('').focus();
-		var content = '<li class="chat-mine"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-text"><div class="chat-info"><span class="chat-time">'+ data.time +'</span><span class="chat-name">'+ data.name +'</span></div><div class="chat-content">'+ action.replace_em(text) +'</div></div></li>';
+		var content = '<div class="chat-mine"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-text"><div class="chat-info"><span class="chat-time">'+ data.time +'</span><span class="chat-name">'+ data.name +'</span></div><div class="chat-content">'+ action.replace_em(text) +'</div></div></div>';
 		$('.chat-main-active').append(content);
 		$('.chat-main-active').scrollTop($('.chat-main-active')[0].scrollHeight);
 	},
@@ -319,7 +347,7 @@ var action = {
 			fr.onload = function() {
 				data.text = this.result;
 				ws.send(JSON.stringify(data));
-				var content = '<li class="chat-mine"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-img"><div class="chat-info"><span class="chat-time">'+ data.time +'</span><span class="chat-name">'+ data.name +'</span></div><div class="chat-content"><img src="'+ this.result +'"></div></div></li>';
+				var content = '<div class="chat-mine"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-img"><div class="chat-info"><span class="chat-time">'+ data.time +'</span><span class="chat-name">'+ data.name +'</span></div><div class="chat-content"><img src="'+ this.result +'"></div></div></div>';
 				$('.chat-main-active').append(content);
 				$('.chat-main-active').scrollTop($('.chat-main-active')[0].scrollHeight);
 				action.resetImg();

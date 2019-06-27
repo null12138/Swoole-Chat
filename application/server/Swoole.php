@@ -121,6 +121,14 @@ class Swoole extends Server
 					$server->push($data['target'],json_encode($res));
 				}
 				break;
+			case 6:
+				//正在输入
+				$res = array(
+					'type'		=> 6,
+					'fd'		=> $frame->fd
+				);
+				$server->push($data['target'],json_encode($res));
+				break;
 		}
 	}
 
