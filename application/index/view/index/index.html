@@ -6,7 +6,7 @@
 	<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
 	<link rel="stylesheet" type="text/css" href="static/css/reset.css">
 	<link rel="stylesheet" type="text/css" href="static/emoji/emoji.css">
-	<link rel="stylesheet" type="text/css" href="//at.alicdn.com/t/font_1252484_s2sjdiok7to.css">
+	<link rel="stylesheet" type="text/css" href="//at.alicdn.com/t/font_1252484_vhpcrmtq2ar.css">
 </head>
 <style type="text/css">
 .icon-head{font-size: 40px;}
@@ -31,7 +31,7 @@
 .chat-member-list li{position: relative;}
 .chat-user strong{position: absolute; right: 10px; width: 20px; height: 20px; border-radius: 11px; background-color: #f00; text-align: center; color: #fff; top: 13px; line-height: 20px; font-size: 12px; padding: 1px;}
 .chat-text .chat-content{position: relative; line-height: 22px; padding: 6px 14px; border-radius: 3px; word-break: break-all; display: inline-block; margin-top: 5px; text-align: left;}
-.chat-content img{border: 1px solid #ccc; border-radius: 3px;}
+.chat-img .chat-content img{border: 1px solid #ccc; border-radius: 3px;}
 .chat-mine .chat-user{float: right;}
 .chat-other .chat-user{float: left;}
 .chat-mine .chat-text{float: right; width: calc(100% - 40px); text-align: right; padding-right: 10px; box-sizing: border-box; position: relative;}
@@ -56,8 +56,8 @@
 .chat-bottom{height: 46px; position: relative;}
 .chat-btn-send{width: 75px; height: 32px; position: absolute; right: 15px; top: 5px; background-color: #5fb878; color: #fff; font-size: 15px; text-align: center; line-height: 32px; cursor: pointer; border-radius: 3px;}
 .chat-btn-tip{display: inline-block; position: absolute; right: 100px; top: 5px; color: #ccc; font-size: 13px; text-align: center; height: 32px; line-height: 32px; cursor: default;}
-.icon-tupian{position: relative;}
-.send-img{position: absolute; font-size: 0; outline: 0; left: 0; top: 0; width: 100%; height: 100%; opacity: 0;}
+.icon-tupian,.icon-yinle{position: relative;}
+.send-img,.send-music{position: absolute; font-size: 0; outline: 0; left: 0; top: 0; width: 100%; height: 100%; opacity: 0;}
 </style>
 <body class="body">
 <div class="chat-wrap">
@@ -74,7 +74,7 @@
 			<div class="chat-main chat-main-list-0 chat-main-active"></div>
 		</div>
 		<div class="chat-footer">
-			<div class="chat-tool"><i class="iconfont icon-biaoqing emotion"></i><i class="iconfont icon-tupian"><input type="file" class="send-img" accept="image/gif,image/jpeg,image/jpg,image/png,image/svg" capture="camera" onchange="action.sendImg(this)"></i></div>
+			<div class="chat-tool"><i class="iconfont icon-biaoqing emotion"></i><i class="iconfont icon-tupian"><input type="file" class="send-img" accept="image/gif,image/jpeg,image/jpg,image/png,image/svg" capture="camera" onchange="action.sendImg(this)"></i><i class="iconfont icon-yinle"><input type="file" class="send-music" accept="audio/mpeg" onchange="action.sendMusic(this)"></i></div>
 			<div class="chat-textarea">
 				<textarea id="textarea" name="textarea"></textarea>
 			</div>
@@ -272,6 +272,30 @@ var action = {
 						}
 					}
 					break;
+				case 7:
+					//处理接收到的音频
+					var content = '<div class="chat-other"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-text"><div class="chat-info"><span class="chat-name">'+ data.name +'</span><span class="chat-time">'+ data.time +'</span></div><div class="chat-content"><audio controls="controls" src="'+ data.text +'"></div></div></div>';
+					var fd = null;
+					if (data.target == 0) {
+						fd = 0; 
+					} else {
+						fd = data.fd;
+					}
+					$('.chat-main-list-' + fd).append(content);
+					var current = $('.chat-user-list-' + fd).hasClass('chat-user-active');
+					if (current == false) {
+						//如果接收消息的聊天框没有激活，则增加未读消息的显示
+						var flag = $('.chat-user-list-' + fd).children('strong').get(0);
+						if (typeof(flag) == 'undefined') {
+							$('.chat-user-list-' + fd).append('<strong>1</strong>');
+						} else {
+							var num = parseInt($('.chat-user-list-' + fd).children('strong').text());
+							$('.chat-user-list-' + fd).children('strong').text(num + 1);
+						}
+					} else {
+						$('.chat-main-list-' + fd).scrollTop($('.chat-main-list-' + fd)[0].scrollHeight);
+					}
+					break;
 			}
 		}
 		ws.onclose = function(e) {
@@ -354,6 +378,36 @@ var action = {
 			}
 		}
 	},
+	//发送音频
+	sendMusic: function(_this) {
+		var mp3 = $(_this)[0].files[0];
+		if (typeof(mp3) != 'undefined') {
+			var extStart = mp3.name.lastIndexOf('.');
+			var ext = mp3.name.substring(extStart, mp3.name.length).toUpperCase();
+			if (ext != '.MP3') {
+				layer.msg('请选择mp3文件');
+				action.resetMusic();
+				return false;
+			}
+			var data = {};
+			data.type = 7;
+			data.name = name;
+			data.time = action.currentTime();
+			data.target = target;
+			$('#textarea').val('').focus();
+			// var formData = new FormData();
+			// formData.append('file',mp3);
+			fr.readAsDataURL(mp3);
+			fr.onload = function() {
+				data.text = this.result;
+				ws.send(JSON.stringify(data));
+				var content = '<div class="chat-mine"><div class="chat-user"><i class="iconfont icon-head icon-yonghu"></i></div><div class="chat-text"><div class="chat-info"><span class="chat-time">'+ data.time +'</span><span class="chat-name">'+ data.name +'</span></div><div class="chat-content"><audio controls="controls" src="'+ this.result +'"></div></div></div>';
+				$('.chat-main-active').append(content);
+				$('.chat-main-active').scrollTop($('.chat-main-active')[0].scrollHeight);
+				action.resetMusic();
+			}
+		}
+	},
 	//表情转换
 	replace_em: function(str) {
 		str = str.replace(/\</g,'&lt;');
@@ -381,6 +435,10 @@ var action = {
 	//重置input图片上传框
 	resetImg: function() {
 		$('.icon-tupian').html('<input type="file" class="send-img" accept="image/gif,image/jpeg,image/jpg,image/png,image/svg" capture="camera" onchange="action.sendImg(this)">');
+	},
+	//重置inputMP3上传框
+	resetMusic: function() {
+		$('.icon-music').html('<input type="file" class="send-music" accept="*.mp3" onchange="action.sendMusic(this)">');
 	}
 }
 
