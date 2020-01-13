@@ -7,7 +7,7 @@ use org\Redis;
 class Swoole extends Server
 {
 	protected $host = '0.0.0.0';
-	protected $port = 9508;
+	protected $port = 9501;
 	protected $serverType = 'socket';
 	protected $mode = SWOOLE_PROCESS;
 	protected $sockType = SWOOLE_SOCK_TCP;
